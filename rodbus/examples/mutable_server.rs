@@ -83,7 +83,17 @@ impl RequestHandler for SimpleHandler {
             value.value
         );
 
-        if let Some(coil) = self.coils.get_mut(value.index as usize) {
+        /*if let Some(coil) = self.coils.get_mut(value.index as usize) {
+            *coil = value.value;
+            Ok(())
+        } else {
+            Err(ExceptionCode::IllegalDataAddress)
+        }*/
+
+        // Lock the mutex for mutation
+        let mut coils_lock = self.coils.lock().unwrap();
+        // Update the value at the given address
+        if let Some(coil) = coils_lock.get_mut(value.index as usize) {
             *coil = value.value;
             Ok(())
         } else {
@@ -98,7 +108,17 @@ impl RequestHandler for SimpleHandler {
             value.value
         );
 
-        if let Some(reg) = self.holding_registers.get_mut(value.index as usize) {
+        /*if let Some(reg) = self.holding_registers.get_mut(value.index as usize) {
+            *reg = value.value;
+            Ok(())
+        } else {
+            Err(ExceptionCode::IllegalDataAddress)
+        }*/
+
+        // Lock the mutex for mutation
+        let mut holding_registers_lock = self.holding_registers.lock().unwrap();
+        // Update the value at the given address
+        if let Some(reg) = holding_registers_lock.get_mut(value.index as usize) {
             *reg = value.value;
             Ok(())
         } else {
@@ -109,7 +129,7 @@ impl RequestHandler for SimpleHandler {
     fn write_multiple_coils(&mut self, values: WriteCoils) -> Result<(), ExceptionCode> {
         tracing::info!("write multiple coils {:?}", values.range);
 
-        let mut result = Ok(());
+        /*let mut result = Ok(());
 
         for value in values.iterator {
             if let Some(coil) = self.coils.get_mut(value.index as usize) {
@@ -119,13 +139,25 @@ impl RequestHandler for SimpleHandler {
             }
         }
 
-        result
+        result*/
+
+        // Lock the mutex for mutation
+        let mut coils_lock = self.coils.lock().unwrap();
+        // Update the values at the given addresses
+        for value in values.iterator {
+            if let Some(coil) = coils_lock.get_mut(value.index as usize) {
+                *coil = value.value;
+            } else {
+                return Err(ExceptionCode::IllegalDataAddress);
+            }
+        }
+        Ok(())
     }
 
     fn write_multiple_registers(&mut self, values: WriteRegisters) -> Result<(), ExceptionCode> {
         tracing::info!("write multiple registers {:?}", values.range);
 
-        let mut result = Ok(());
+        /*let mut result = Ok(());
 
         for value in values.iterator {
             if let Some(reg) = self.holding_registers.get_mut(value.index as usize) {
@@ -135,7 +167,19 @@ impl RequestHandler for SimpleHandler {
             }
         }
 
-        result
+        result*/
+
+        // Lock the mutex for mutation
+        let mut holding_registers_lock = self.holding_registers.lock().unwrap();
+        // Update the values at the given addresses
+        for value in values.iterator {
+            if let Some(reg) = holding_registers_lock.get_mut(value.index as usize) {
+                *reg = value.value;
+            } else {
+                return Err(ExceptionCode::IllegalDataAddress);
+            }
+        }
+        Ok(())
     }
 }
 // ANCHOR_END: request_handler
