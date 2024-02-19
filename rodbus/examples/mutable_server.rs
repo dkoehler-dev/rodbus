@@ -33,19 +33,47 @@ impl SimpleHandler {
 // ANCHOR: request_handler
 impl RequestHandler for SimpleHandler {
     fn read_coil(&self, address: u16) -> Result<bool, ExceptionCode> {
-        self.coils.get(address as usize).to_result()
+        //self.coils.get(address as usize).to_result()
+
+        // Lock the mutex to prevent concurrent access
+        let coils_lock = self.coils.lock().unwrap();
+        // Return the value at the given address
+        coils_lock.get(address as usize)
+            .cloned()
+            .ok_or(ExceptionCode::IllegalDataAddress)
     }
 
     fn read_discrete_input(&self, address: u16) -> Result<bool, ExceptionCode> {
-        self.discrete_inputs.get(address as usize).to_result()
+        //self.discrete_inputs.get(address as usize).to_result()
+
+        // Lock the mutex to prevent concurrent access
+        let discrete_inputs_lock = self.discrete_inputs.lock().unwrap();
+        // Return the value at the given address
+        discrete_inputs_lock.get(address as usize)
+            .cloned()
+            .ok_or(ExceptionCode::IllegalDataAddress)
     }
 
     fn read_holding_register(&self, address: u16) -> Result<u16, ExceptionCode> {
-        self.holding_registers.get(address as usize).to_result()
+        //self.holding_registers.get(address as usize).to_result()
+
+        // Lock the mutex to prevent concurrent access
+        let holding_registers_lock = self.holding_registers.lock().unwrap();
+        // Return the value at the given address
+        holding_registers_lock.get(address as usize)
+            .cloned()
+            .ok_or(ExceptionCode::IllegalDataAddress)
     }
 
     fn read_input_register(&self, address: u16) -> Result<u16, ExceptionCode> {
-        self.input_registers.get(address as usize).to_result()
+        //self.input_registers.get(address as usize).to_result()
+
+        // Lock the mutex to prevent concurrent access
+        let input_registers_lock = self.input_registers.lock().unwrap();
+        // Return the value at the given address
+        input_registers_lock.get(address as usize)
+            .cloned()
+            .ok_or(ExceptionCode::IllegalDataAddress)
     }
 
     fn write_single_coil(&mut self, value: Indexed<bool>) -> Result<(), ExceptionCode> {
