@@ -348,26 +348,30 @@ async fn run_server(
                 server.set_decode_level(DecodeLevel::nothing()).await?;
             }
             "uc" => {
-                let mut handler = handler.lock().unwrap();
-                for coil in handler.coils_as_mut() {
+                let handler_lock = handler.lock().unwrap();
+                let mut coils = handler_lock.coils.lock().unwrap();
+                for coil in coils.iter_mut() {
                     *coil = !*coil;
                 }
             }
             "udi" => {
-                let mut handler = handler.lock().unwrap();
-                for discrete_input in handler.discrete_inputs_as_mut() {
+                let handler_lock = handler.lock().unwrap();
+                let mut discrete_inputs = handler_lock.discrete_inputs.lock().unwrap();
+                for discrete_input in discrete_inputs.iter_mut() {
                     *discrete_input = !*discrete_input;
                 }
             }
             "uhr" => {
-                let mut handler = handler.lock().unwrap();
-                for holding_register in handler.holding_registers_as_mut() {
+                let handler_lock = handler.lock().unwrap();
+                let mut holding_registers = handler_lock.holding_registers.lock().unwrap();
+                for holding_register in holding_registers.iter_mut() {
                     *holding_register += 1;
                 }
             }
             "uir" => {
-                let mut handler = handler.lock().unwrap();
-                for input_register in handler.input_registers_as_mut() {
+                let handler_lock = handler.lock().unwrap();
+                let mut input_registers = handler_lock.input_registers.lock().unwrap();
+                for input_register in input_registers.iter_mut() {
                     *input_register += 1;
                 }
             }
