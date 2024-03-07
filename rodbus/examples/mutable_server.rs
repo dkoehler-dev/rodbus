@@ -33,8 +33,6 @@ impl SimpleHandler {
 // ANCHOR: request_handler
 impl RequestHandler for SimpleHandler {
     fn read_coil(&self, address: u16) -> Result<bool, ExceptionCode> {
-        //self.coils.get(address as usize).to_result()
-
         // Lock the mutex to prevent concurrent access
         let coils_lock = self.coils.lock().unwrap();
         // Return the value at the given address
@@ -44,8 +42,6 @@ impl RequestHandler for SimpleHandler {
     }
 
     fn read_discrete_input(&self, address: u16) -> Result<bool, ExceptionCode> {
-        //self.discrete_inputs.get(address as usize).to_result()
-
         // Lock the mutex to prevent concurrent access
         let discrete_inputs_lock = self.discrete_inputs.lock().unwrap();
         // Return the value at the given address
@@ -55,8 +51,6 @@ impl RequestHandler for SimpleHandler {
     }
 
     fn read_holding_register(&self, address: u16) -> Result<u16, ExceptionCode> {
-        //self.holding_registers.get(address as usize).to_result()
-
         // Lock the mutex to prevent concurrent access
         let holding_registers_lock = self.holding_registers.lock().unwrap();
         // Return the value at the given address
@@ -66,8 +60,6 @@ impl RequestHandler for SimpleHandler {
     }
 
     fn read_input_register(&self, address: u16) -> Result<u16, ExceptionCode> {
-        //self.input_registers.get(address as usize).to_result()
-
         // Lock the mutex to prevent concurrent access
         let input_registers_lock = self.input_registers.lock().unwrap();
         // Return the value at the given address
@@ -82,13 +74,6 @@ impl RequestHandler for SimpleHandler {
             value.index,
             value.value
         );
-
-        /*if let Some(coil) = self.coils.get_mut(value.index as usize) {
-            *coil = value.value;
-            Ok(())
-        } else {
-            Err(ExceptionCode::IllegalDataAddress)
-        }*/
 
         // Lock the mutex for mutation
         let mut coils_lock = self.coils.lock().unwrap();
@@ -108,13 +93,6 @@ impl RequestHandler for SimpleHandler {
             value.value
         );
 
-        /*if let Some(reg) = self.holding_registers.get_mut(value.index as usize) {
-            *reg = value.value;
-            Ok(())
-        } else {
-            Err(ExceptionCode::IllegalDataAddress)
-        }*/
-
         // Lock the mutex for mutation
         let mut holding_registers_lock = self.holding_registers.lock().unwrap();
         // Update the value at the given address
@@ -128,18 +106,6 @@ impl RequestHandler for SimpleHandler {
 
     fn write_multiple_coils(&mut self, values: WriteCoils) -> Result<(), ExceptionCode> {
         tracing::info!("write multiple coils {:?}", values.range);
-
-        /*let mut result = Ok(());
-
-        for value in values.iterator {
-            if let Some(coil) = self.coils.get_mut(value.index as usize) {
-                *coil = value.value;
-            } else {
-                result = Err(ExceptionCode::IllegalDataAddress)
-            }
-        }
-
-        result*/
 
         // Lock the mutex for mutation
         let mut coils_lock = self.coils.lock().unwrap();
@@ -156,18 +122,6 @@ impl RequestHandler for SimpleHandler {
 
     fn write_multiple_registers(&mut self, values: WriteRegisters) -> Result<(), ExceptionCode> {
         tracing::info!("write multiple registers {:?}", values.range);
-
-        /*let mut result = Ok(());
-
-        for value in values.iterator {
-            if let Some(reg) = self.holding_registers.get_mut(value.index as usize) {
-                *reg = value.value;
-            } else {
-                result = Err(ExceptionCode::IllegalDataAddress)
-            }
-        }
-
-        result*/
 
         // Lock the mutex for mutation
         let mut holding_registers_lock = self.holding_registers.lock().unwrap();
