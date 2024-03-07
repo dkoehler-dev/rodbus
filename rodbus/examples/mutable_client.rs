@@ -182,92 +182,138 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
     // ANCHOR_END: request_param
 
     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-    loop {
-        match reader.next().await.unwrap()?.as_str() {
-            "x" => return Ok(()),
-            "ec" => {
-                // enable channel
+    while let Some(line) = reader.next().await {
+        let line = line?; // This handles the Some(Err(e)) case by returning Err(e)
+        let parts = line.split_whitespace().collect::<Vec<&str>>();
+        match parts.as_slice() {
+            ["x"] => return Ok(()),
+            ["ec"] => {
                 channel.enable().await?;
             }
-            "dc" => {
-                // disable channel
+            ["dc"] => {
                 channel.disable().await?;
             }
-            "ed" => {
-                // enable decoding
+            ["ed"] => {
                 channel
                     .set_decode_level(DecodeLevel::new(
                         AppDecodeLevel::DataValues,
-                        FrameDecodeLevel::Header,
-                        PhysDecodeLevel::Length,
+                        FrameDecodeLevel::Payload,
+                        PhysDecodeLevel::Data,
                     ))
                     .await?;
             }
-            "dd" => {
-                // disable decoded
+            ["dd"] => {
                 channel.set_decode_level(DecodeLevel::nothing()).await?;
             }
-            "rc" => {
-                // ANCHOR: read_coils
-                let result = channel
-                    .read_coils(params, AddressRange::try_from(0, 5).unwrap())
-                    .await;
-                // ANCHOR_END: read_coils
-                print_read_result(result);
-            }
-            "rdi" => {
-                let result = channel
-                    .read_discrete_inputs(params, AddressRange::try_from(0, 5).unwrap())
-                    .await;
-                print_read_result(result);
-            }
-            "rhr" => {
-                let result = channel
-                    .read_holding_registers(params, AddressRange::try_from(0, 5).unwrap())
-                    .await;
-                print_read_result(result);
-            }
-            "rir" => {
-                let result = channel
-                    .read_input_registers(params, AddressRange::try_from(0, 5).unwrap())
-                    .await;
-                print_read_result(result);
-            }
-            "wsc" => {
-                // ANCHOR: write_single_coil
-                let result = channel
-                    .write_single_coil(params, Indexed::new(0, true))
-                    .await;
-                // ANCHOR_END: write_single_coil
-                print_write_result(result);
-            }
-            "wsr" => {
-                let result = channel
-                    .write_single_register(params, Indexed::new(0, 76))
-                    .await;
-                print_write_result(result);
-            }
-            "wmc" => {
-                let result = channel
-                    .write_multiple_coils(
-                        params,
-                        WriteMultiple::from(0, vec![true, false]).unwrap(),
-                    )
-                    .await;
-                print_write_result(result);
-            }
-            "wmr" => {
-                // ANCHOR: write_multiple_registers
-                let result = channel
-                    .write_multiple_registers(
-                        params,
-                        WriteMultiple::from(0, vec![0xCA, 0xFE]).unwrap(),
-                    )
-                    .await;
-                print_write_result(result);
-                // ANCHOR_END: write_multiple_registers
+            ["scfc", fc_str, values @ ..] => {
+                let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
+                let values: Vec<u16> = values.iter().filter_map(|&v| u16::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
+
+                if (fc >= 65 && fc <= 72) || (fc >= 100 && fc <= 110) {
+                    if values.len() >= 2 {
+                        let byte_count_in = values[0] as u8;
+                        let byte_count_out = values[1] as u8;
+
+                        let result = channel
+                            .send_custom_function_code(
+                                params,
+                                CustomFunctionCode::new(fc, byte_count_in, byte_count_out, values[2..].to_vec())
+                            )
+                            .await;
+                        print_write_result(result);
+                    } else {
+                        println!("Error: missing arguments.");
+                    }
+                } else {
+                    match fc {
+                        0x01 => {
+                            // ANCHOR: read_coils
+                            let start = values[0];
+                            let count = values[1];
+                            let result = channel
+                                .read_coils(params, AddressRange::try_from(start, count).unwrap())
+                                .await;
+                            // ANCHOR_END: read_coils
+                            print_read_result(result);
+                        }
+                        0x02 => {
+                            // ANCHOR: read_discrete_inputs
+                            let start = values[0];
+                            let count = values[1];
+                            let result = channel
+                                .read_discrete_inputs(params, AddressRange::try_from(start, count).unwrap())
+                                .await;
+                            // ANCHOR_END: read_discrete_inputs
+                            print_read_result(result);
+                        }
+                        0x03 => {
+                            // ANCHOR: read_holding_registers
+                            let start = values[0];
+                            let count = values[1];
+                            let result = channel
+                                .read_holding_registers(params, AddressRange::try_from(start, count).unwrap())
+                                .await;
+                            // ANCHOR_END: read_holding_registers
+                            print_read_result(result);
+                        }
+                        0x04 => {
+                            // ANCHOR: read_input_registers
+                            let start = values[0];
+                            let count = values[1];
+                            let result = channel
+                                .read_input_registers(params, AddressRange::try_from(start, count).unwrap())
+                                .await;
+                            // ANCHOR_END: read_input_registers
+                            print_read_result(result);
+                        }
+                        0x05 => {
+                            // ANCHOR: write_single_coil
+                            let address = values[0];
+                            let value = values[1] != 0;
+                            let result = channel
+                                .write_single_coil(params, Indexed::new(address, value))
+                                .await;
+                            // ANCHOR_END: write_single_coil
+                            print_write_result(result);
+                        }
+                        0x06 => {
+                            // ANCHOR: write_single_register
+                            let address = values[0];
+                            let value = values[1];
+                            let result = channel
+                                .write_single_register(params, Indexed::new(address, value))
+                                .await;
+                            // ANCHOR_END: write_single_register
+                            print_write_result(result);
+                        }
+                        0x0F => {
+                            // ANCHOR: write_multiple_coils
+                            let start = values[0];
+                            // The subsequent values are the coil states, convert the values to booleans
+                            let coils: Vec<bool> = values[1..].iter().map(|&v| v != 0).collect();
+                            let result = channel
+                                .write_multiple_coils(params, WriteMultiple::from(start, coils).unwrap())
+                                .await;
+                            // ANCHOR_END: write_multiple_coils
+                            print_write_result(result);
+                        }
+                        0x10 => {
+                            // ANCHOR: write_multiple_registers
+                            let start = values[0];
+                            let registers: Vec<u16> = values[1..].to_vec();
+                            let result = channel
+                                .write_multiple_registers(params, WriteMultiple::from(start, registers).unwrap())
+                                .await;
+                            // ANCHOR_END: write_multiple_registers
+                            print_write_result(result);
+                        }
+                        _ => println!("unknown function code"),
+                    };
+                    println!("Error: CFC number is not inside the range of 65-72 or 100-110.");
+                }
             }
             _ => println!("unknown command"),
         }
     }
+    Ok(())
 }
