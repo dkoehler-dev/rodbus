@@ -94,6 +94,14 @@ impl RequestHandler for Handler {
         }
         Ok(())
     }
+
+    fn process_cfc_65(&mut self, values: CustomFunctionCode<u16>) -> Result<CustomFunctionCode<u16>, ExceptionCode> {
+        tracing::info!("processing custom function code: {}, data: {:?}", values.function_code(), values.iter());
+        // increment each CFC value by 1 and return the result
+        let incremented_data = values.iter().map(|&val| val + 1).collect();
+
+        Ok(CustomFunctionCode::new(values.function_code(), values.byte_count_in(), values.byte_count_out(), incremented_data))
+    }
 }
 
 async fn test_requests_and_responses() {
@@ -221,6 +229,82 @@ async fn test_requests_and_responses() {
             Indexed::new(1, 0x0304),
             Indexed::new(2, 0x0506)
         ]
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x41, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Ok(CustomFunctionCode::new(0x41, 4, 4, vec![0xC0DF, 0xCAFF, 0xC0DF, 0xCAFF]))
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x42, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x43, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x44, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x45, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x46, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x47, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x48, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x64, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x65, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x66, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x67, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x68, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x69, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6A, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6B, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6C, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6D, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
+    );
+    assert_eq!(
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6E, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Err(rodbus::ExceptionCode::IllegalFunction.into())
     );
 }
 

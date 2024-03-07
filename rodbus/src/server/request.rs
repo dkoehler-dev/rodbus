@@ -21,6 +21,7 @@ pub(crate) enum Request<'a> {
     WriteSingleRegister(Indexed<u16>),
     WriteMultipleCoils(WriteCoils<'a>),
     WriteMultipleRegisters(WriteRegisters<'a>),
+    SendCustomFunctionCode(CustomFunctionCode<u16>),
 }
 
 /// All requests that support broadcast
@@ -64,6 +65,30 @@ impl<'a> Request<'a> {
             Request::WriteSingleRegister(_) => FunctionCode::WriteSingleRegister,
             Request::WriteMultipleCoils(_) => FunctionCode::WriteMultipleCoils,
             Request::WriteMultipleRegisters(_) => FunctionCode::WriteMultipleRegisters,
+            Request::SendCustomFunctionCode(x) => {
+                match x.function_code() {
+                    0x41 => FunctionCode::SendCFC65,
+                    0x42 => FunctionCode::SendCFC66,
+                    0x43 => FunctionCode::SendCFC67,
+                    0x44 => FunctionCode::SendCFC68,
+                    0x45 => FunctionCode::SendCFC69,
+                    0x46 => FunctionCode::SendCFC70,
+                    0x47 => FunctionCode::SendCFC71,
+                    0x48 => FunctionCode::SendCFC72,
+                    0x64 => FunctionCode::SendCFC100,
+                    0x65 => FunctionCode::SendCFC101,
+                    0x66 => FunctionCode::SendCFC102,
+                    0x67 => FunctionCode::SendCFC103,
+                    0x68 => FunctionCode::SendCFC104,
+                    0x69 => FunctionCode::SendCFC105,
+                    0x6A => FunctionCode::SendCFC106,
+                    0x6B => FunctionCode::SendCFC107,
+                    0x6C => FunctionCode::SendCFC108,
+                    0x6D => FunctionCode::SendCFC109,
+                    0x6E => FunctionCode::SendCFC110,
+                    _ => panic!("Invalid custom function code"),
+                }
+            },
         }
     }
 
@@ -77,6 +102,7 @@ impl<'a> Request<'a> {
             Request::WriteSingleRegister(x) => Some(BroadcastRequest::WriteSingleRegister(x)),
             Request::WriteMultipleCoils(x) => Some(BroadcastRequest::WriteMultipleCoils(x)),
             Request::WriteMultipleRegisters(x) => Some(BroadcastRequest::WriteMultipleRegisters(x)),
+            Request::SendCustomFunctionCode(_) => None,
         }
     }
 
@@ -141,6 +167,31 @@ impl<'a> Request<'a> {
                     .map(|_| items.range);
                 write_result(function, header, writer, result, level)
             }
+            Request::SendCustomFunctionCode(request) => {
+                let result = match function {
+                    FunctionCode::SendCFC65 => handler.process_cfc_65(request.clone()),
+                    FunctionCode::SendCFC66 => handler.process_cfc_66(request.clone()),
+                    FunctionCode::SendCFC67 => handler.process_cfc_67(request.clone()),
+                    FunctionCode::SendCFC68 => handler.process_cfc_68(request.clone()),
+                    FunctionCode::SendCFC69 => handler.process_cfc_69(request.clone()),
+                    FunctionCode::SendCFC70 => handler.process_cfc_70(request.clone()),
+                    FunctionCode::SendCFC71 => handler.process_cfc_71(request.clone()),
+                    FunctionCode::SendCFC72 => handler.process_cfc_72(request.clone()),
+                    FunctionCode::SendCFC100 => handler.process_cfc_100(request.clone()),
+                    FunctionCode::SendCFC101 => handler.process_cfc_101(request.clone()),
+                    FunctionCode::SendCFC102 => handler.process_cfc_102(request.clone()),
+                    FunctionCode::SendCFC103 => handler.process_cfc_103(request.clone()),
+                    FunctionCode::SendCFC104 => handler.process_cfc_104(request.clone()),
+                    FunctionCode::SendCFC105 => handler.process_cfc_105(request.clone()),
+                    FunctionCode::SendCFC106 => handler.process_cfc_106(request.clone()),
+                    FunctionCode::SendCFC107 => handler.process_cfc_107(request.clone()),
+                    FunctionCode::SendCFC108 => handler.process_cfc_108(request.clone()),
+                    FunctionCode::SendCFC109 => handler.process_cfc_109(request.clone()),
+                    FunctionCode::SendCFC110 => handler.process_cfc_110(request.clone()),
+                    _ => Err(ExceptionCode::IllegalFunction),
+                };
+                write_result(function, header, writer, result, level)
+            }
         }
     }
 
@@ -200,6 +251,15 @@ impl<'a> Request<'a> {
                     RegisterIterator::parse_all(range, cursor)?,
                 )))
             }
+            FunctionCode::SendCFC65 | FunctionCode::SendCFC66 | FunctionCode::SendCFC67 | FunctionCode::SendCFC68 | 
+            FunctionCode::SendCFC69 | FunctionCode::SendCFC70 | FunctionCode::SendCFC71 | FunctionCode::SendCFC72 | 
+            FunctionCode::SendCFC100 | FunctionCode::SendCFC101 | FunctionCode::SendCFC102 | FunctionCode::SendCFC103 | 
+            FunctionCode::SendCFC104 | FunctionCode::SendCFC105 | FunctionCode::SendCFC106 | FunctionCode::SendCFC107 | 
+            FunctionCode::SendCFC108 | FunctionCode::SendCFC109 | FunctionCode::SendCFC110 => {
+                let x = Request::SendCustomFunctionCode(CustomFunctionCode::parse(cursor)?);
+                cursor.expect_empty()?;
+                Ok(x)
+            }
         }
     }
 }
@@ -252,6 +312,9 @@ impl std::fmt::Display for RequestDisplay<'_, '_> {
                         " {}",
                         RegisterIteratorDisplay::new(self.level, items.iterator)
                     )?;
+                }
+                Request::SendCustomFunctionCode(request) => {
+                    write!(f, " {request}")?;
                 }
             }
         }
