@@ -67,11 +67,6 @@ pub trait RequestHandler: Send + 'static {
     fn process_cfc(&mut self, _values: CustomFunctionCode<u16>) -> Result<CustomFunctionCode<u16>, ExceptionCode> {
         Err(ExceptionCode::IllegalFunction)
     }
-
-    /// Process a generic mutable function code
-    fn process_mutable_fc<T>(&mut self, _value: MutableFunctionCode<T>) -> Result<MutableFunctionCode<T>, ExceptionCode> {
-        Err(ExceptionCode::IllegalFunction)
-    }
 }
 
 /// Trait useful for converting None into IllegalDataAddress
@@ -241,11 +236,6 @@ pub trait AuthorizationHandler: Send + Sync + 'static {
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
         Authorization::Deny
     }
-
-    /// Authorize a Mutable FC request
-    fn process_mutable_fc<T>(&self, _unit_id: UnitId, _value: MutableFunctionCode<T>, _role: &str) -> Authorization {
-        Authorization::Deny
-    }
 }
 
 /// Read-only authorization handler that blindly accepts
@@ -327,11 +317,6 @@ impl AuthorizationHandler for ReadOnlyAuthorizationHandler {
 
     /// Authorize a Send CFC request
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
-        Authorization::Deny
-    }
-
-    /// Authorize a Mutable FC request
-    fn process_mutable_fc<T>(&self, _unit_id: UnitId, _value: MutableFunctionCode<T>, _role: &str) -> Authorization {
         Authorization::Deny
     }
 }
