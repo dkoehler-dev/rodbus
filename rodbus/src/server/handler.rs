@@ -69,7 +69,7 @@ pub trait RequestHandler: Send + 'static {
     }
 
     /// Process a generic mutable function code
-    fn process_mutable_fc<T>(&mut self, _value: MutableFunctionCode<T>) -> Result<Vec<u16>, ExceptionCode> {
+    fn process_mutable_fc<T>(&mut self, _value: MutableFunctionCode<T>) -> Result<MutableFunctionCode<T>, ExceptionCode> {
         Err(ExceptionCode::IllegalFunction)
     }
 }
