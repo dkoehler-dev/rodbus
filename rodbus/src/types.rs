@@ -85,6 +85,13 @@ pub(crate) struct RegisterIteratorDisplay<'a> {
     level: AppDecodeLevel,
 }
 
+/// Mutable Function Code
+#[derive(Clone, Debug, PartialEq)]
+pub struct MutableFunctionCode<T> {
+    fc: u8,
+    request: T,
+}
+
 /// Custom Function Code
 #[derive(Clone, Debug, PartialEq)]
 pub struct CustomFunctionCode<T> {
@@ -373,6 +380,23 @@ impl UnitId {
 impl Default for UnitId {
     fn default() -> Self {
         Self { value: 0xFF }
+    }
+}
+
+impl<T> MutableFunctionCode<T> {
+    /// Create a new mutable function code
+    pub fn new(fc: u8, request: T) -> Self {
+        Self { fc, request }
+    }
+
+    /// Get the function code
+    pub fn function_code(&self) -> u8 {
+        self.fc
+    }
+
+    /// Get the request
+    pub fn request(&self) -> &T {
+        &self.request
     }
 }
 
