@@ -143,7 +143,7 @@ where
     async fn handle_frame(&mut self, io: &mut PhysLayer, frame: Frame) -> Result<(), RequestError> {
         let mut cursor = ReadCursor::new(frame.payload());
 
-        let function = match cursor.read_u8() {
+        let mut function = match cursor.read_u8() {
             Err(_) => {
                 tracing::warn!("received an empty frame");
                 return Ok(());
@@ -163,6 +163,43 @@ where
                 }
             },
         };
+
+        if function == FunctionCode::SendMutableFC {
+            function = match cursor.read_u8() {
+                Err(_) => {
+                    tracing::warn!("received an empty mutable FC");
+                    return Ok(());
+                }
+                Ok(value) => match FunctionCode::get(value) {
+                    Some(x) => {
+                        if x == FunctionCode::SendMutableFC {
+                            tracing::warn!("received nested mutable FC");
+                            return self
+                                .reply_with_error_generic(
+                                    io,
+                                    frame.header,
+                                    FunctionField::unknown(value),
+                                    ExceptionCode::IllegalFunction,
+                                )
+                                .await;
+                        } else {
+                            x
+                        }
+                    },
+                    None => {
+                        tracing::warn!("received unknown unwrapped function code: {}", value);
+                        return self
+                            .reply_with_error_generic(
+                                io,
+                                frame.header,
+                                FunctionField::unknown(value),
+                                ExceptionCode::IllegalFunction,
+                            )
+                            .await;
+                    }
+                },
+            };
+        }
 
         let request = match Request::parse(function, &mut cursor) {
             Ok(x) => x,
