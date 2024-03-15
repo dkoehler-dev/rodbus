@@ -29,3 +29,18 @@ impl<'a> WriteRegisters<'a> {
         Self { range, iterator }
     }
 }
+
+/// Request to process a generic mutable function code
+#[derive(Debug, Copy, Clone)]
+pub struct MutableFunctionCode<'a> {
+    /// function code to process
+    pub function_code: u8,
+    /// raw data of the request
+    pub data: &'a [u8],
+}
+
+/*impl<'a> MutableFunctionCode<'a> {
+    pub(crate) fn new(function_code: u8, data: &'a [u8]) -> Self {
+        Self { function_code, data }
+    }
+}*/
