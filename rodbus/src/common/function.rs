@@ -28,6 +28,7 @@ mod constants {
     pub(crate) const SEND_CFC_108: u8 = 108;
     pub(crate) const SEND_CFC_109: u8 = 109;
     pub(crate) const SEND_CFC_110: u8 = 110;
+    pub(crate) const SEND_MUTABLE_FC: u8 = 0xFF;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -60,6 +61,7 @@ pub(crate) enum FunctionCode {
     SendCFC108 = constants::SEND_CFC_108,
     SendCFC109 = constants::SEND_CFC_109,
     SendCFC110 = constants::SEND_CFC_110,
+    SendMutableFC = constants::SEND_MUTABLE_FC,
 }
 
 impl Display for FunctionCode {
@@ -93,6 +95,9 @@ impl Display for FunctionCode {
             FunctionCode::SendCFC104 | FunctionCode::SendCFC105 | FunctionCode::SendCFC106 | FunctionCode::SendCFC107 | 
             FunctionCode::SendCFC108 | FunctionCode::SendCFC109 | FunctionCode::SendCFC110 => {
                 write!(f, "SEND CUSTOM FUNCTION CODE ({:#04X})", self.get_value())
+            }
+            FunctionCode::SendMutableFC => {
+                write!(f, "SEND MUTABLE FUNCTION CODE ({:#04X})", self.get_value())
             }
         }
     }
@@ -136,6 +141,7 @@ impl FunctionCode {
             constants::SEND_CFC_108 => Some(FunctionCode::SendCFC108),
             constants::SEND_CFC_109 => Some(FunctionCode::SendCFC109),
             constants::SEND_CFC_110 => Some(FunctionCode::SendCFC110),
+            constants::SEND_MUTABLE_FC => Some(FunctionCode::SendMutableFC),
             _ => None,
         }
     }
