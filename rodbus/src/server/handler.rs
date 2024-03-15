@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use crate::exception::ExceptionCode;
-use crate::server::{WriteCoils, WriteRegisters};
+use crate::server::{WriteCoils, WriteRegisters, MutableFunctionCode};
 use crate::types::*;
 
 /// Trait implemented by the user to process requests received from the client
@@ -63,8 +63,13 @@ pub trait RequestHandler: Send + 'static {
         Err(ExceptionCode::IllegalFunction)
     }
 
-    /// Write the CFC custom function code
+    /// Process a custom function code
     fn process_cfc(&mut self, _values: CustomFunctionCode<u16>) -> Result<CustomFunctionCode<u16>, ExceptionCode> {
+        Err(ExceptionCode::IllegalFunction)
+    }
+
+    /// Process a generic mutable function code
+    fn process_mfc(&mut self, _values: MutableFunctionCode) -> Result<MutableFunctionCode, ExceptionCode> {
         Err(ExceptionCode::IllegalFunction)
     }
 }
@@ -236,6 +241,11 @@ pub trait AuthorizationHandler: Send + Sync + 'static {
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
         Authorization::Deny
     }
+
+    /// Authorize a Send MFC request
+    fn process_mfc(&self, _unit_id: UnitId, _value: MutableFunctionCode, _role: &str) -> Authorization {
+        Authorization::Deny
+    }
 }
 
 /// Read-only authorization handler that blindly accepts
@@ -319,6 +329,11 @@ impl AuthorizationHandler for ReadOnlyAuthorizationHandler {
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
         Authorization::Deny
     }
+
+    /// Authorize a Send MFC request
+    fn process_mfc(&self, _unit_id: UnitId, _value: MutableFunctionCode, _role: &str) -> Authorization {
+        Authorization::Deny
+    }
 }
 
 #[cfg(test)]
@@ -352,82 +367,19 @@ mod tests {
             handler.write_single_register(Indexed::new(0, 0)),
             Err(ExceptionCode::IllegalFunction)
         );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x41, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x42, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x43, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x44, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x45, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x46, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x47, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x48, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x64, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x65, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x66, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x67, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x68, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x69, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x6A, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x6B, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x6C, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x6D, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
-        assert_eq!(
-            handler.process_cfc(CustomFunctionCode::new(0x6E, 4, 4, vec![0x01, 0x02, 0x03, 0x04])),
-            Err(ExceptionCode::IllegalFunction)
-        );
+        for i in 65..73 {
+            assert_eq!(
+                handler.process_cfc(CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])),
+                Err(ExceptionCode::IllegalFunction.into())
+            );
+        }
+        // Test the unimplemented valid handlers from 100 to 110
+        for i in 100..111 {
+            assert_eq!(
+                handler.process_cfc(CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])),
+                Err(ExceptionCode::IllegalFunction.into())
+            );
+        }
     }
 
     #[test]
