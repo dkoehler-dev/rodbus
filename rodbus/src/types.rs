@@ -85,12 +85,14 @@ pub(crate) struct RegisterIteratorDisplay<'a> {
     level: AppDecodeLevel,
 }
 
+/*
 /// Mutable Function Code
 #[derive(Clone, Debug, PartialEq)]
 pub struct MutableFunctionCode<T> {
     fc: u8,
     request: T,
 }
+*/
 
 /// Custom Function Code
 #[derive(Clone, Debug, PartialEq)]

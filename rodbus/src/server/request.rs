@@ -22,7 +22,6 @@ pub(crate) enum Request<'a> {
     WriteMultipleCoils(WriteCoils<'a>),
     WriteMultipleRegisters(WriteRegisters<'a>),
     SendCustomFunctionCode(CustomFunctionCode<u16>),
-    SendMutableFunctionCode(MutableFunctionCode<'a>),
 }
 
 /// All requests that support broadcast
@@ -248,6 +247,7 @@ impl<'a> Request<'a> {
                 cursor.expect_empty()?;
                 Ok(x)
             }
+            _ => Err(RequestError::Exception(ExceptionCode::IllegalFunction)),
         }
     }
 }
