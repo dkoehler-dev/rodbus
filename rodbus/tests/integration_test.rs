@@ -97,10 +97,41 @@ impl RequestHandler for Handler {
 
     fn process_cfc(&mut self, values: CustomFunctionCode<u16>) -> Result<CustomFunctionCode<u16>, ExceptionCode> {
         tracing::info!("processing custom function code: {}, data: {:?}", values.function_code(), values.iter());
-        // increment each CFC value by 1 and return the result
-        let incremented_data = values.iter().map(|&val| val + 1).collect();
+        match values.function_code() {
+            0x41 => {
+                // increment each CFC value by 1 and return the result
+                // Create a new vector to hold the incremented values
+                let incremented_data = values.iter().map(|&val| val + 1).collect();
 
-        Ok(CustomFunctionCode::new(values.function_code(), values.byte_count_in(), values.byte_count_out(), incremented_data))
+                // Return a new CustomFunctionCode with the incremented data
+                Ok(CustomFunctionCode::new(values.function_code(), values.byte_count_in(), values.byte_count_out(), incremented_data))
+            },
+            0x42 => {
+                // add a new value to the buffer and return the result
+                // Create a new vector to hold the incremented values
+                let extended_data = {
+                    let mut extended_data = values.iter().map(|val| *val).collect::<Vec<u16>>();
+                    extended_data.push(0xC0DE);
+                    extended_data
+                };
+
+                // Return a new CustomFunctionCode with the incremented data
+                Ok(CustomFunctionCode::new(values.function_code(), values.byte_count_in(), values.byte_count_out(), extended_data))
+            },
+            0x43 => {
+                // remove the first value from the buffer and return the result
+                // Create a new vector to hold the incremented values
+                let truncated_data = {
+                    let mut truncated_data = values.iter().map(|val| *val).collect::<Vec<u16>>();
+                    truncated_data.pop();
+                    truncated_data
+                };
+
+                // Return a new CustomFunctionCode with the incremented data
+                Ok(CustomFunctionCode::new(values.function_code(), values.byte_count_in(), values.byte_count_out(), truncated_data))
+            },
+            _ => Err(ExceptionCode::IllegalFunction),
+        }
     }
 }
 
@@ -230,82 +261,54 @@ async fn test_requests_and_responses() {
             Indexed::new(2, 0x0506)
         ]
     );
+    // Test the invalid CFC handlers below 65
+    for i in 0..65 {
+        assert_eq!(
+            channel.send_custom_function_code(params, CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+            Err(rodbus::ExceptionCode::IllegalFunction.into())
+        );
+    }
+    // Test the implemented valid test handlers 65, 66, 67
     assert_eq!(
         channel.send_custom_function_code(params, CustomFunctionCode::new(0x41, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
         Ok(CustomFunctionCode::new(0x41, 4, 4, vec![0xC0DF, 0xCAFF, 0xC0DF, 0xCAFF]))
     );
     assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x42, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x42, 4, 5, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Ok(CustomFunctionCode::new(0x42, 4, 5, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE, 0xC0DE]))
     );
     assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x43, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
+        channel.send_custom_function_code(params, CustomFunctionCode::new(0x43, 4, 3, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+        Ok(CustomFunctionCode::new(0x43, 4, 3, vec![0xC0DE, 0xCAFE, 0xC0DE]))
     );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x44, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x45, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x46, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x47, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x48, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x64, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x65, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x66, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x67, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x68, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x69, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6A, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6B, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6C, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6D, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
-    assert_eq!(
-        channel.send_custom_function_code(params, CustomFunctionCode::new(0x6E, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
-        Err(rodbus::ExceptionCode::IllegalFunction.into())
-    );
+    // Test the unimplemented valid handlers from 68 to 72
+    for i in 68..73 {
+        assert_eq!(
+            channel.send_custom_function_code(params, CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+            Err(rodbus::ExceptionCode::IllegalFunction.into())
+        );
+    }
+    // Test the invalid handlers from 73 to 99
+    for i in 73..100 {
+        assert_eq!(
+            channel.send_custom_function_code(params, CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+            Err(rodbus::ExceptionCode::IllegalFunction.into())
+        );
+    }
+    // Test the unimplemented valid handlers from 100 to 110
+    for i in 100..110 {
+        assert_eq!(
+            channel.send_custom_function_code(params, CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+            Err(rodbus::ExceptionCode::IllegalFunction.into())
+        );
+    }
+    // Test the invalid CFC handlers from 111 to 255
+    for i in 111..=255 {
+        assert_eq!(
+            channel.send_custom_function_code(params, CustomFunctionCode::new(i, 4, 4, vec![0xC0DE, 0xCAFE, 0xC0DE, 0xCAFE])).await,
+            Err(rodbus::ExceptionCode::IllegalFunction.into())
+        );
+    }
 }
 
 #[test]
