@@ -383,7 +383,7 @@ impl Default for UnitId {
     }
 }
 
-impl<T> MutableFunctionCode<T> {
+/*impl<T> MutableFunctionCode<T> {
     /// Create a new mutable function code
     pub fn new(fc: u8, request: T) -> Self {
         Self { fc, request }
@@ -398,7 +398,7 @@ impl<T> MutableFunctionCode<T> {
     pub fn request(&self) -> &T {
         &self.request
     }
-}
+}*/
 
 impl CustomFunctionCode<u16> {
     /// Create a new custom function code

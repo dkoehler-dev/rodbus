@@ -106,6 +106,7 @@ impl RtuParser {
                 FunctionCode::SendCFC108 => LengthMode::Offset(1),
                 FunctionCode::SendCFC109 => LengthMode::Offset(1),
                 FunctionCode::SendCFC110 => LengthMode::Offset(1),
+                FunctionCode::SendMutableFC => LengthMode::Offset(1),
             },
             ParserType::Response => match function_code {
                 FunctionCode::ReadCoils => LengthMode::Offset(1),
@@ -135,6 +136,7 @@ impl RtuParser {
                 FunctionCode::SendCFC108 => LengthMode::Offset(1),
                 FunctionCode::SendCFC109 => LengthMode::Offset(1),
                 FunctionCode::SendCFC110 => LengthMode::Offset(1),
+                FunctionCode::SendMutableFC => LengthMode::Offset(1),
             },
         }
     }
