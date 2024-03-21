@@ -11,8 +11,9 @@ use crate::client::requests::read_registers::ReadRegisters;
 use crate::client::requests::write_multiple::MultipleWriteRequest;
 use crate::client::requests::write_single::SingleWrite;
 use crate::client::requests::send_custom_fc::CustomFCRequest;
+use crate::client::requests::send_mutable_fc::SendMutableFC;
 use crate::common::traits::Serialize;
-use crate::types::{Indexed, UnitId, CustomFunctionCode};
+use crate::types::{Indexed, UnitId, CustomFunctionCode, MutableFunctionCode};
 
 use scursor::{ReadCursor, WriteCursor};
 use std::time::Duration;
@@ -47,6 +48,7 @@ pub(crate) enum RequestDetails {
     WriteMultipleCoils(MultipleWriteRequest<bool>),
     WriteMultipleRegisters(MultipleWriteRequest<u16>),
     SendCustomFunctionCode(CustomFCRequest<CustomFunctionCode<u16>>),
+    SendMutableFunctionCode(SendMutableFC<MutableFunctionCode>),
 }
 
 impl Request {
@@ -165,6 +167,7 @@ impl RequestDetails {
                     _ => Err(ExceptionCode::IllegalFunction),
                 }
             },
+            RequestDetails::SendMutableFunctionCode(_) => Ok(FunctionCode::SendMutableFC),
         }
     }
 
@@ -179,6 +182,7 @@ impl RequestDetails {
             RequestDetails::WriteMultipleCoils(x) => x.failure(err),
             RequestDetails::WriteMultipleRegisters(x) => x.failure(err),
             RequestDetails::SendCustomFunctionCode(x) => x.failure(err),
+            RequestDetails::SendMutableFunctionCode(x) => x.failure(err),
         }
     }
 
@@ -202,6 +206,9 @@ impl RequestDetails {
             RequestDetails::SendCustomFunctionCode(x) => {
                 x.handle_response(cursor, function, decode)
             }
+            RequestDetails::SendMutableFunctionCode(x) => {
+                x.handle_response(cursor, function, decode)
+            }
         }
     }
 }
@@ -218,6 +225,7 @@ impl Serialize for RequestDetails {
             RequestDetails::WriteMultipleCoils(x) => x.serialize(cursor),
             RequestDetails::WriteMultipleRegisters(x) => x.serialize(cursor),
             RequestDetails::SendCustomFunctionCode(x) => x.serialize(cursor),
+            RequestDetails::SendMutableFunctionCode(x) => x.serialize(cursor),
         }
     }
 }
@@ -283,6 +291,9 @@ impl std::fmt::Display for RequestDetailsDisplay<'_> {
                     }
                 }
                 RequestDetails::SendCustomFunctionCode(details) => {
+                    write!(f, "{}", details.request)?;
+                }
+                RequestDetails::SendMutableFunctionCode(details) => {
                     write!(f, "{}", details.request)?;
                 }
             }
