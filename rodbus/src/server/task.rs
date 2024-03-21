@@ -162,15 +162,33 @@ where
                                 )
                                 .await;
                         }
-                        // create a new slice of the rest of the buffer (underlying request)
-                        let unwrapped_data = cursor.read_all();
                         // update the cursor to the new request
-                        cursor = ReadCursor::new(unwrapped_data);
+                        cursor = ReadCursor::new(cursor.read_all());
                         // check the function code of the underlying request and return it
-                        match FunctionCode::get(unwrapped_data[0]) {
-                            Some(x) => {
-                                if x == FunctionCode::SendMutableFC {
-                                    tracing::warn!("received a nested mutable FC, but they are not supported");
+                        match cursor.read_u8() {
+                            Err(_) => {
+                                tracing::warn!("received an empty frame");
+                                return Ok(());
+                            }
+                            Ok(value) => match FunctionCode::get(value) {
+                                Some(x) => {
+                                    if x == FunctionCode::SendMutableFC {
+                                        tracing::warn!("received a nested mutable FC, but they are not supported");
+                                        return self
+                                            .reply_with_error_generic(
+                                                io,
+                                                frame.header,
+                                                FunctionField::unknown(value),
+                                                ExceptionCode::IllegalFunction,
+                                            )
+                                            .await;
+                                    }
+                                    else {
+                                        x
+                                    }
+                                },
+                                None => {
+                                    tracing::warn!("received unknown function code: {}", value);
                                     return self
                                         .reply_with_error_generic(
                                             io,
@@ -180,20 +198,6 @@ where
                                         )
                                         .await;
                                 }
-                                else {
-                                    x
-                                }
-                            },
-                            None => {
-                                tracing::warn!("received unknown function code: {}", value);
-                                return self
-                                    .reply_with_error_generic(
-                                        io,
-                                        frame.header,
-                                        FunctionField::unknown(value),
-                                        ExceptionCode::IllegalFunction,
-                                    )
-                                    .await;
                             }
                         }
                     }
