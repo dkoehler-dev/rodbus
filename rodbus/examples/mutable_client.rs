@@ -205,14 +205,6 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
             ["dd"] => {
                 channel.set_decode_level(DecodeLevel::nothing()).await?;
             }
-            ["rc"] => {
-                // ANCHOR: read_coils
-                let result = channel
-                    .read_coils(params, AddressRange::try_from(0x0, 0x5).unwrap())
-                    .await;
-                // ANCHOR_END: read_coils
-                print_write_result(result);
-            }
             ["smfc", fc_str, values @ ..] => {
                 let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
                 let values: Vec<u16> = values.iter().filter_map(|&v| u16::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
