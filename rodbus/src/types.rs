@@ -85,14 +85,12 @@ pub(crate) struct RegisterIteratorDisplay<'a> {
     level: AppDecodeLevel,
 }
 
-/*
 /// Mutable Function Code
 #[derive(Clone, Debug, PartialEq)]
-pub struct MutableFunctionCode<T> {
+pub struct MutableFunctionCode {
     fc: u8,
-    request: T,
+    data: Vec<u16>,
 }
-*/
 
 /// Custom Function Code
 #[derive(Clone, Debug, PartialEq)]
@@ -385,10 +383,10 @@ impl Default for UnitId {
     }
 }
 
-/*impl<T> MutableFunctionCode<T> {
+impl MutableFunctionCode {
     /// Create a new mutable function code
-    pub fn new(fc: u8, request: T) -> Self {
-        Self { fc, request }
+    pub fn new(fc: u8, data: Vec<u16>) -> Self {
+        Self { fc, data }
     }
 
     /// Get the function code
@@ -396,11 +394,25 @@ impl Default for UnitId {
         self.fc
     }
 
-    /// Get the request
-    pub fn request(&self) -> &T {
-        &self.request
+    /// Get the data
+    pub fn data(&self) -> &[u16] {
+        &self.data
     }
-}*/
+}
+
+impl std::fmt::Display for MutableFunctionCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "fc: {:#X}, ", self.fc)?;
+        write!(f, "data: [")?;
+        for (i, val) in self.data.iter().enumerate() {
+            if i != 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{:#X}", val)?;
+        }
+        write!(f, "]")
+    }
+}
 
 impl CustomFunctionCode<u16> {
     /// Create a new custom function code
