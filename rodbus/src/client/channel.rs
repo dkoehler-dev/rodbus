@@ -6,7 +6,8 @@ use crate::client::requests::read_registers::ReadRegisters;
 use crate::client::requests::write_multiple::{MultipleWriteRequest, WriteMultiple};
 use crate::client::requests::write_single::SingleWrite;
 use crate::client::requests::send_custom_fc::CustomFCRequest;
-use crate::error::*;
+use crate::client::requests::send_mutable_fc::SendMutableFC;
+use crate::{error::*, MutableFunctionCode};
 use crate::types::{AddressRange, BitIterator, Indexed, RegisterIterator, UnitId, CustomFunctionCode};
 use crate::DecodeLevel;
 
@@ -175,6 +176,21 @@ impl Channel {
         let request = wrap(
             param,
             RequestDetails::SendCustomFunctionCode(CustomFCRequest::new(request, Promise::channel(tx))),
+        );
+        self.tx.send(request).await?;
+        rx.await?
+    }
+
+    /// Send a Custom Function Code to the server
+    pub async fn send_mutable_function_code(
+        &mut self,
+        param: RequestParam,
+        request: MutableFunctionCode,
+    ) -> Result<MutableFunctionCode, RequestError> {
+        let (tx, rx) = tokio::sync::oneshot::channel::<Result<MutableFunctionCode, RequestError>>();
+        let request = wrap(
+            param,
+            RequestDetails::SendMutableFunctionCode(SendMutableFC::new(request, Promise::channel(tx))),
         );
         self.tx.send(request).await?;
         rx.await?
