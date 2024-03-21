@@ -3,9 +3,8 @@ use std::fmt::Display;
 use crate::client::message::Promise;
 use crate::common::function::FunctionCode;
 use crate::decode::AppDecodeLevel;
-//use crate::error::AduParseError;
 use crate::error::RequestError;
-use crate::types::{Indexed, MutableFunctionCode};
+use crate::types::MutableFunctionCode;
 
 use scursor::{ReadCursor, WriteCursor};
 
