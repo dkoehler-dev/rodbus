@@ -143,13 +143,64 @@ where
     async fn handle_frame(&mut self, io: &mut PhysLayer, frame: Frame) -> Result<(), RequestError> {
         let mut cursor = ReadCursor::new(frame.payload());
 
-        let mut function = match cursor.read_u8() {
+        let function:FunctionCode = match cursor.read_u8() {
             Err(_) => {
                 tracing::warn!("received an empty frame");
                 return Ok(());
             }
             Ok(value) => match FunctionCode::get(value) {
-                Some(x) => x,
+                Some(x) => {
+                    if x == FunctionCode::SendMutableFC {
+                        if cursor.remaining() == 0 {
+                            tracing::warn!("received an empty mutable FC request");
+                            return self
+                                .reply_with_error_generic(
+                                    io,
+                                    frame.header,
+                                    FunctionField::unknown(value),
+                                    ExceptionCode::IllegalFunction,
+                                )
+                                .await;
+                        }
+                        // create a new slice of the rest of the buffer (underlying request)
+                        let unwrapped_data = cursor.read_all();
+                        // update the cursor to the new request
+                        cursor = ReadCursor::new(unwrapped_data);
+                        // check the function code of the underlying request and return it
+                        match FunctionCode::get(unwrapped_data[0]) {
+                            Some(x) => {
+                                if x == FunctionCode::SendMutableFC {
+                                    tracing::warn!("received a nested mutable FC, but they are not supported");
+                                    return self
+                                        .reply_with_error_generic(
+                                            io,
+                                            frame.header,
+                                            FunctionField::unknown(value),
+                                            ExceptionCode::IllegalFunction,
+                                        )
+                                        .await;
+                                }
+                                else {
+                                    x
+                                }
+                            },
+                            None => {
+                                tracing::warn!("received unknown function code: {}", value);
+                                return self
+                                    .reply_with_error_generic(
+                                        io,
+                                        frame.header,
+                                        FunctionField::unknown(value),
+                                        ExceptionCode::IllegalFunction,
+                                    )
+                                    .await;
+                            }
+                        }
+                    }
+                    else {
+                        x
+                    }
+                },
                 None => {
                     tracing::warn!("received unknown function code: {}", value);
                     return self
@@ -163,43 +214,6 @@ where
                 }
             },
         };
-
-        if function == FunctionCode::SendMutableFC {
-            function = match cursor.read_u8() {
-                Err(_) => {
-                    tracing::warn!("received an empty mutable FC");
-                    return Ok(());
-                }
-                Ok(value) => match FunctionCode::get(value) {
-                    Some(x) => {
-                        if x == FunctionCode::SendMutableFC {
-                            tracing::warn!("received nested mutable FC");
-                            return self
-                                .reply_with_error_generic(
-                                    io,
-                                    frame.header,
-                                    FunctionField::unknown(value),
-                                    ExceptionCode::IllegalFunction,
-                                )
-                                .await;
-                        } else {
-                            x
-                        }
-                    },
-                    None => {
-                        tracing::warn!("received unknown unwrapped function code: {}", value);
-                        return self
-                            .reply_with_error_generic(
-                                io,
-                                frame.header,
-                                FunctionField::unknown(value),
-                                ExceptionCode::IllegalFunction,
-                            )
-                            .await;
-                    }
-                },
-            };
-        }
 
         let request = match Request::parse(function, &mut cursor) {
             Ok(x) => x,
