@@ -178,7 +178,7 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
     channel.enable().await?;
 
     // ANCHOR: request_param
-    let params = RequestParam::new(UnitId::new(1), Duration::from_secs(1));
+    let params = RequestParam::new(UnitId::new(1), Duration::from_secs(900));
     // ANCHOR_END: request_param
 
     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
@@ -204,6 +204,14 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
             }
             ["dd"] => {
                 channel.set_decode_level(DecodeLevel::nothing()).await?;
+            }
+            ["rc"] => {
+                // ANCHOR: read_coils
+                let result = channel
+                    .read_coils(params, AddressRange::try_from(0x0, 0x5).unwrap())
+                    .await;
+                // ANCHOR_END: read_coils
+                print_write_result(result);
             }
             ["smfc", fc_str, values @ ..] => {
                 let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
