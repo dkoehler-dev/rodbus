@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use crate::exception::ExceptionCode;
-use crate::server::{WriteCoils, WriteRegisters, MutableFunctionCode};
+use crate::server::{WriteCoils, WriteRegisters};
 use crate::types::*;
 
 /// Trait implemented by the user to process requests received from the client
@@ -65,11 +65,6 @@ pub trait RequestHandler: Send + 'static {
 
     /// Process a custom function code
     fn process_cfc(&mut self, _values: CustomFunctionCode<u16>) -> Result<CustomFunctionCode<u16>, ExceptionCode> {
-        Err(ExceptionCode::IllegalFunction)
-    }
-
-    /// Process a generic mutable function code
-    fn process_mfc(&mut self, _values: MutableFunctionCode) -> Result<MutableFunctionCode, ExceptionCode> {
         Err(ExceptionCode::IllegalFunction)
     }
 }
@@ -241,11 +236,6 @@ pub trait AuthorizationHandler: Send + Sync + 'static {
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
         Authorization::Deny
     }
-
-    /// Authorize a Send MFC request
-    fn process_mfc(&self, _unit_id: UnitId, _value: MutableFunctionCode, _role: &str) -> Authorization {
-        Authorization::Deny
-    }
 }
 
 /// Read-only authorization handler that blindly accepts
@@ -327,11 +317,6 @@ impl AuthorizationHandler for ReadOnlyAuthorizationHandler {
 
     /// Authorize a Send CFC request
     fn process_cfc(&self, _unit_id: UnitId, _value: CustomFunctionCode<u16>, _role: &str) -> Authorization {
-        Authorization::Deny
-    }
-
-    /// Authorize a Send MFC request
-    fn process_mfc(&self, _unit_id: UnitId, _value: MutableFunctionCode, _role: &str) -> Authorization {
         Authorization::Deny
     }
 }
