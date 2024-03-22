@@ -142,27 +142,21 @@ where
 
     async fn handle_frame(&mut self, io: &mut PhysLayer, frame: Frame) -> Result<(), RequestError> {
         let mut cursor = ReadCursor::new(frame.payload());
+        let mut is_wrapped = false;
 
-        let function:FunctionCode = match cursor.read_u8() {
+        let function: FunctionCode = match cursor.read_u8() {
             Err(_) => {
                 tracing::warn!("received an empty frame");
                 return Ok(());
             }
             Ok(value) => match FunctionCode::get(value) {
                 Some(x) => {
-                    if x == FunctionCode::SendMutableFC {
-                        if cursor.remaining() == 0 {
-                            tracing::warn!("received an empty mutable FC request");
-                            return self
-                                .reply_with_error_generic(
-                                    io,
-                                    frame.header,
-                                    FunctionField::unknown(value),
-                                    ExceptionCode::IllegalFunction,
-                                )
-                                .await;
-                        }
-                        // update the cursor to the new request
+                    if x != FunctionCode::SendMutableFC {
+                        x
+                    } else {
+                        // set the is_wrapped flag to true, so we know we need to wrap the response again later on
+                        is_wrapped = true;
+                        // create a new cursor from the rest of the buffer (underlying request)
                         cursor = ReadCursor::new(cursor.read_all());
                         // check the function code of the underlying request and return it
                         match cursor.read_u8() {
@@ -172,7 +166,9 @@ where
                             }
                             Ok(value) => match FunctionCode::get(value) {
                                 Some(x) => {
-                                    if x == FunctionCode::SendMutableFC {
+                                    if x != FunctionCode::SendMutableFC {
+                                        x
+                                    } else {
                                         tracing::warn!("received a nested mutable FC, but they are not supported");
                                         return self
                                             .reply_with_error_generic(
@@ -183,10 +179,7 @@ where
                                             )
                                             .await;
                                     }
-                                    else {
-                                        x
-                                    }
-                                },
+                                }
                                 None => {
                                     tracing::warn!("received unknown function code: {}", value);
                                     return self
@@ -198,13 +191,10 @@ where
                                         )
                                         .await;
                                 }
-                            }
+                            },
                         }
                     }
-                    else {
-                        x
-                    }
-                },
+                }
                 None => {
                     tracing::warn!("received unknown function code: {}", value);
                     return self
@@ -270,7 +260,14 @@ where
                     &mut self.writer,
                     self.decode,
                 )?;
-                io.write(reply, self.decode.physical).await?;
+                // add 0xFF at position 3 at the reply object if it's a mutable FC request (wrapped)
+                if is_wrapped {
+                    let mut unwrapped_reply = reply.to_vec();
+                    unwrapped_reply.insert(7, 0xFF);
+                    io.write(&unwrapped_reply, self.decode.physical).await?;
+                } else {
+                    io.write(reply, self.decode.physical).await?;
+                }
             }
             FrameDestination::Broadcast => match request.into_broadcast_request() {
                 None => {
@@ -319,14 +316,12 @@ impl AuthorizationType {
             Request::WriteMultipleRegisters(x) => {
                 handler.write_multiple_registers(unit_id, x.range, role)
             }
-            Request::SendCustomFunctionCode(x) => {
-                match x.function_code() {
-                    0x41 | 0x42 | 0x43 | 0x44 | 0x45 | 0x46 | 0x47 | 0x48 | 0x64 | 0x65 | 0x66 | 0x67 | 0x68 | 0x69 | 0x6A | 0x6B | 0x6C | 0x6D | 0x6E => {
-                        handler.process_cfc(unit_id, x.clone(), role)
-                    },
-                    _ => Authorization::Deny,
+            Request::SendCustomFunctionCode(x) => match x.function_code() {
+                0x41 | 0x42 | 0x43 | 0x44 | 0x45 | 0x46 | 0x47 | 0x48 | 0x64 | 0x65 | 0x66
+                | 0x67 | 0x68 | 0x69 | 0x6A | 0x6B | 0x6C | 0x6D | 0x6E => {
+                    handler.process_cfc(unit_id, x.clone(), role)
                 }
-
+                _ => Authorization::Deny,
             },
         }
     }
