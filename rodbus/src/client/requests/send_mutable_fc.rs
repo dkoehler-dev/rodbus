@@ -58,9 +58,6 @@ where
     fn parse_all(&self, mut cursor: ReadCursor) -> Result<T, RequestError> {
         let response = T::parse(&mut cursor)?;
         cursor.expect_empty()?;
-        /*if self.request != response {
-            return Err(AduParseError::ReplyEchoMismatch.into());
-        }*/
         Ok(response)
     }
 }
@@ -69,9 +66,8 @@ where
 impl SendMutableFCOperation for MutableFunctionCode {
     fn serialize(&self, cursor: &mut WriteCursor) -> Result<(), RequestError> {
         cursor.write_u8(self.function_code())?;
-        // Write each element to the cursor
         for element in self.data() {
-            cursor.write_u16_be(*element)?;
+            cursor.write_u8(*element)?;
         }
         Ok(())
     }
@@ -79,7 +75,6 @@ impl SendMutableFCOperation for MutableFunctionCode {
     fn parse(cursor: &mut ReadCursor) -> Result<Self, RequestError> {
         let fc = cursor.read_u8()?;
         let raw_values = cursor.read_all();
-        let values = raw_values.iter().map(|&v| v as u16).collect::<Vec<u16>>();
-        Ok(MutableFunctionCode::new(fc, values))
+        Ok(MutableFunctionCode::new(fc, raw_values.to_vec()))
     }
 }

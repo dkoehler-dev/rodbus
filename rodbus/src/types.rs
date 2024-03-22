@@ -89,7 +89,7 @@ pub(crate) struct RegisterIteratorDisplay<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct MutableFunctionCode {
     fc: u8,
-    data: Vec<u16>,
+    data: Vec<u8>,
 }
 
 /// Custom Function Code
@@ -385,7 +385,7 @@ impl Default for UnitId {
 
 impl MutableFunctionCode {
     /// Create a new mutable function code
-    pub fn new(fc: u8, data: Vec<u16>) -> Self {
+    pub fn new(fc: u8, data: Vec<u8>) -> Self {
         Self { fc, data }
     }
 
@@ -395,7 +395,7 @@ impl MutableFunctionCode {
     }
 
     /// Get the data
-    pub fn data(&self) -> &[u16] {
+    pub fn data(&self) -> &[u8] {
         &self.data
     }
 }

@@ -207,8 +207,8 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
             }
             ["smfc", fc_str, values @ ..] => {
                 let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
-                let values: Vec<u16> = values.iter().filter_map(|&v| u16::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
-
+                let values: Vec<u8> = values.iter().filter_map(|&v| u8::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
+                
                 let result = channel
                     .send_mutable_function_code(
                         params,
