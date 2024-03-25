@@ -198,8 +198,8 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                 channel
                     .set_decode_level(DecodeLevel::new(
                         AppDecodeLevel::DataValues,
-                        FrameDecodeLevel::Header,
-                        PhysDecodeLevel::Length,
+                        FrameDecodeLevel::Payload,
+                        PhysDecodeLevel::Data,
                     ))
                     .await?;
             }
