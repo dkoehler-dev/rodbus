@@ -28,7 +28,7 @@ mod constants {
     pub(crate) const SEND_CFC_108: u8 = 108;
     pub(crate) const SEND_CFC_109: u8 = 109;
     pub(crate) const SEND_CFC_110: u8 = 110;
-    pub(crate) const SEND_MUTABLE_FC: u8 = 0xFF;
+    pub(crate) const SEND_MUTABLE_FC: u8 = 0x0;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
