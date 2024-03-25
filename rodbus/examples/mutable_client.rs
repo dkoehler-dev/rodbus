@@ -208,20 +208,19 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
             }
             ["smfc", fc_str, values @ ..] => {
                 let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
-                let values: Vec<u8> = values.iter().filter_map(|&v| u8::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
                 
-                let result = channel
-                    .send_mutable_function_code(
-                        params,
-                        MutableFunctionCode::new(fc, values)
-                    )
-                    .await;
-                print_write_result(result);
-            }
-            ["test"] => {
-                // Test all mutable FC requests (1-255)
-                for i in 0..=255 {
-                    let data = match i {
+                // If values were supplied, use them. Otherwise use example request data
+                if !values.is_empty() {
+                    let values = values.iter().filter_map(|&v| u8::from_str_radix(v.trim_start_matches("0x"), 16).ok()).collect();
+                    let result = channel
+                        .send_mutable_function_code(
+                            params,
+                            MutableFunctionCode::new(fc, values),
+                        )
+                        .await;
+                    print_write_result(result);
+                } else {
+                    let data = match fc {
                         // Undefined FCs
                         0 | 9 | 10 | 13 | 14 | 18 | 19 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 44 | 45 | 46 | 47 | 48 | 49 | 50 | 
                         51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 | 64 | 73 | 74 | 75 | 76 | 77 | 78 | 79 | 80 | 81 | 82 | 83 | 84 | 85 | 86 | 87 | 88 | 89 | 90 | 91 | 
@@ -231,17 +230,17 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                         188 | 189 | 190 | 191 | 192 | 193 | 194 | 195 | 196 | 197 | 198 | 199 | 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 209 | 210 | 211 | 212 | 213 | 214 | 215 | 
                         216 | 217 | 218 | 219 | 220 | 221 | 222 | 223 | 224 | 225 | 226 | 227 | 228 | 229 | 230 | 231 | 232 | 233 | 234 | 235 | 236 | 237 | 238 | 239 | 240 | 241 | 242 | 243 | 
                         244 | 245 | 246 | 247 | 248 | 249 | 250 | 251 | 252 | 253 | 254 | 255 => vec![0],
-                        // Read Coils               - start: 0, quantity: 5
+                        // Read Coils - start: 0, quantity: 5
                         1 => vec![0, 0, 0, 5],
-                        // Read Discrete Inputs     - start: 0, quantity: 5
+                        // Read Discrete Inputs - start: 0, quantity: 5
                         2 => vec![0, 0, 0, 5],
-                        // Read Holding Registers   - start: 0, quantity: 5
+                        // Read Holding Registers - start: 0, quantity: 5
                         3 => vec![0, 0, 0, 5],
-                        // Read Input Registers     - start: 0, quantity: 5
+                        // Read Input Registers - start: 0, quantity: 5
                         4 => vec![0, 0, 0, 5],
-                        // Write Single Coil        - address: 0, value: 1
+                        // Write Single Coil - address: 0, value: 1
                         5 => vec![0, 0, 0, 1],
-                        // Write Single Register    - address: 0, value: 1
+                        // Write Single Register - address: 0, value: 1
                         6 => vec![0, 0, 0, 1],
                         // Read Exception Status
                         7 => vec![],
@@ -275,7 +274,7 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                     let result = channel
                         .send_mutable_function_code(
                             params,
-                            MutableFunctionCode::new(i, data),
+                            MutableFunctionCode::new(fc, data),
                         )
                         .await;
                     print_write_result(result);
