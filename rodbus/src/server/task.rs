@@ -260,10 +260,10 @@ where
                     &mut self.writer,
                     self.decode,
                 )?;
-                // add 0xFF at position 3 at the reply object if it's a mutable FC request (wrapped)
+                // add '0x00' at position 7 at the reply object if it's a mutable FC request (wrapper flag)
                 if is_wrapped {
                     let mut unwrapped_reply = reply.to_vec();
-                    unwrapped_reply.insert(7, 0xFF);
+                    unwrapped_reply.insert(7, FunctionCode::SendMutableFC.get_value());
                     io.write(&unwrapped_reply, self.decode.physical).await?;
                 } else {
                     io.write(reply, self.decode.physical).await?;
