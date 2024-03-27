@@ -146,7 +146,7 @@ fn get_ca_chain_config() -> Result<TlsClientConfig, Box<dyn std::error::Error>> 
     Ok(tls_config)
 }
 
-/*fn print_read_result<T>(result: Result<Vec<Indexed<T>>, RequestError>)
+fn print_read_result<T>(result: Result<Vec<Indexed<T>>, RequestError>)
 where
     T: std::fmt::Display,
 {
@@ -161,7 +161,7 @@ where
         }
         Err(err) => println!("read error: {err}"),
     }
-}*/
+}
 
 fn print_write_result<T>(result: Result<T, RequestError>) {
     match result {
@@ -205,6 +205,14 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
             }
             ["dd"] => {
                 channel.set_decode_level(DecodeLevel::nothing()).await?;
+            }
+            ["rc"] => {
+                // ANCHOR: read_coils
+                let result = channel
+                    .read_coils(params, AddressRange::try_from(0, 5).unwrap())
+                    .await;
+                // ANCHOR_END: read_coils
+                print_read_result(result);
             }
             ["smfc", fc_str, values @ ..] => {
                 let fc = u8::from_str_radix(fc_str.trim_start_matches("0x"), 16).unwrap();
