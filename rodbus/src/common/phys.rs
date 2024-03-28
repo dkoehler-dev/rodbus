@@ -95,8 +95,7 @@ impl PhysLayer {
         decode_level: PhysDecodeLevel,
     ) -> Result<(), std::io::Error> {
         if decode_level.enabled() {
-            //tracing::info!("PHYS TX - {}", PhysDisplay::new(decode_level, data));
-            tracing::info!("PHYS TX - None");
+            tracing::info!("PHYS TX - {}", PhysDisplay::new(decode_level, data));
         }
 
         match &mut self.layer {

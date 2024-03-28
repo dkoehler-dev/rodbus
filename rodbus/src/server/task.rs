@@ -142,7 +142,6 @@ where
 
     async fn handle_frame(&mut self, io: &mut PhysLayer, frame: Frame) -> Result<(), RequestError> {
         let mut cursor = ReadCursor::new(frame.payload());
-        let mut is_wrapped = false;
 
         let function: FunctionCode = match cursor.read_u8() {
             Err(_) => {
@@ -154,8 +153,6 @@ where
                     if x != FunctionCode::SendMutableFC {
                         x
                     } else {
-                        // set the is_wrapped flag to true, so we know we need to wrap the response again later on
-                        is_wrapped = true;
                         // create a new cursor from the rest of the buffer (underlying request)
                         cursor = ReadCursor::new(cursor.read_all());
                         // check the function code of the underlying request and return it
@@ -260,19 +257,6 @@ where
                     &mut self.writer,
                     self.decode,
                 )?;
-                //tracing::info!("reply: {:?}", reply);
-                //io.write(reply, self.decode.physical).await?;
-                
-                // add '0x00' at position 7 at the reply object if it's a mutable FC request (wrapper flag)
-                /*if is_wrapped {
-                    let mut unwrapped_reply = reply.to_vec();
-                    unwrapped_reply.insert(7, FunctionCode::SendMutableFC.get_value());
-                    println!("wrapped_reply: {:?}", unwrapped_reply);
-                    io.write(&unwrapped_reply, self.decode.physical).await?;
-                } else {
-                    io.write(reply, self.decode.physical).await?;
-                }*/
-                //println!("reply: {:?}", reply);
                 io.write(reply, self.decode.physical).await?;
             }
             FrameDestination::Broadcast => match request.into_broadcast_request() {
