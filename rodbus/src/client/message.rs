@@ -65,7 +65,7 @@ impl Request {
         payload: &[u8],
         decode: AppDecodeLevel,
     ) -> Result<(), RequestError> {
-        let expected_function = self.details.function()?;
+        let mut expected_function = self.details.function()?;
         let mut cursor = ReadCursor::new(payload);
         let function = match cursor.read_u8() {
             Ok(x) => x,
@@ -74,6 +74,24 @@ impl Request {
                 return Err(err.into());
             }
         };
+
+        if expected_function == FunctionCode::SendMutableFC {
+            // if the response is wrapped, authorize it
+            expected_function = match FunctionCode::get(function) {
+                Some(fc) => {
+                    fc
+                }
+                None => {
+                    tracing::warn!("received unknown function code: {}", function);
+                    //return Err(Self::get_error_for(function, expected_function, cursor));
+                    return Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(
+                        function,
+                        expected_function.get_value(),
+                        expected_function.as_error(),
+                    )));
+                }
+            };
+        }
 
         if function != expected_function.get_value() {
             return Err(Self::get_error_for(function, expected_function, cursor));
