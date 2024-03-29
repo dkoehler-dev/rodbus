@@ -277,7 +277,7 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                         // Read Device Identification - object id: 0, object length: 5
                         43 => vec![0, 0, 0, 0, 0, 5],
                         // Custom FCs
-                        65 | 66 | 67 | 68 | 69 | 70 | 71 | 72 | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 | 108 | 109 | 110 => vec![],
+                        65 | 66 | 67 | 68 | 69 | 70 | 71 | 72 | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 | 108 | 109 | 110 => vec![fc, 0xC0, 0xDE],
                     };
                     let result = channel
                         .send_mutable_function_code(
