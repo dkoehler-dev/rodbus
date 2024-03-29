@@ -237,7 +237,7 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                         160 | 161 | 162 | 163 | 164 | 165 | 166 | 167 | 168 | 169 | 170 | 171 | 172 | 173 | 174 | 175 | 176 | 177 | 178 | 179 | 180 | 181 | 182 | 183 | 184 | 185 | 186 | 187 | 
                         188 | 189 | 190 | 191 | 192 | 193 | 194 | 195 | 196 | 197 | 198 | 199 | 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 209 | 210 | 211 | 212 | 213 | 214 | 215 | 
                         216 | 217 | 218 | 219 | 220 | 221 | 222 | 223 | 224 | 225 | 226 | 227 | 228 | 229 | 230 | 231 | 232 | 233 | 234 | 235 | 236 | 237 | 238 | 239 | 240 | 241 | 242 | 243 | 
-                        244 | 245 | 246 | 247 | 248 | 249 | 250 | 251 | 252 | 253 | 254 | 255 => vec![0],
+                        244 | 245 | 246 | 247 | 248 | 249 | 250 | 251 | 252 | 253 | 254 | 255 => vec![],
                         // Read Coils - start: 0, quantity: 5
                         1 => vec![0, 0, 0, 5],
                         // Read Discrete Inputs - start: 0, quantity: 5
@@ -246,36 +246,36 @@ async fn run_channel(mut channel: Channel) -> Result<(), Box<dyn std::error::Err
                         3 => vec![0, 0, 0, 5],
                         // Read Input Registers - start: 0, quantity: 5
                         4 => vec![0, 0, 0, 5],
-                        // Write Single Coil - address: 0, value: 1
-                        5 => vec![0, 0, 0, 1],
+                        // Write Single Coil - address: 0, value: ON (FF 00)
+                        5 => vec![0, 0, 255, 0],
                         // Write Single Register - address: 0, value: 1
                         6 => vec![0, 0, 0, 1],
-                        // Read Exception Status
+                        // Read Exception Status - Serial Line only - Not implemented (IllegalFunction)
                         7 => vec![],
-                        // Diagnostic - sub function: 0, data: 0
-                        8 => vec![0, 0],
-                        // Get Comm Event Counter
+                        // Diagnostic - sub function: 0, data: [0xA5, 0x37]  - Serial Line only - Not implemented (IllegalFunction)
+                        8 => vec![0, 0, 165, 55],
+                        // Get Comm Event Counter - Serial Line only - Not implemented (IllegalFunction)
                         11 => vec![],
-                        // Get Comm Event Log
+                        // Get Comm Event Log - Serial Line only - Not implemented (IllegalFunction)
                         12 => vec![],
-                        // Write Multiple Coils - start: 0, quantity: 5, byte count: 10, values: 1, 2, 3, 4, 5
-                        15 => vec![0, 0, 0, 5, 10, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5],
+                        // Write Multiple Coils - start: 0, quantity: 8, byte count: 1, values: 1111 1111
+                        15 => vec![0, 0, 0, 8, 1, 255],
                         // Write Multiple Registers - start: 0, quantity: 5, byte count: 10, values: 1, 2, 3, 4, 5
                         16 => vec![0, 0, 0, 5, 10, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5],
-                        // Report Slave ID
+                        // Report Slave ID  - Serial Line only - Not implemented (IllegalFunction)
                         17 => vec![],
-                        // Read File Record - file number: 0, record number: 0, record length: 5
-                        20 => vec![0, 0, 0, 0, 0, 5],
-                        // Write File Record - file number: 0, record number: 0, record length: 5, byte count: 10, values: 1, 2, 3, 4, 5
-                        21 => vec![0, 0, 0, 0, 0, 5, 10, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5],
-                        // Mask Write Register - address: 0, and mask: 0, or mask: 1
-                        22 => vec![0, 0, 0, 0, 0, 1],
-                        // Read/Write Multiple Registers - read start: 0, read quantity: 5, write start: 0, write quantity: 5, byte count: 10, values: 1, 2, 3, 4, 5
-                        23 => vec![0, 0, 0, 5, 0, 0, 0, 5, 10, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5],
-                        // Read FIFO Queue - address: 0
-                        24 => vec![0, 0],
-                        // Read Device Identification - object id: 0, object length: 5
-                        43 => vec![0, 0, 0, 0, 0, 5],
+                        // Read File Record - Not implemented (IllegalFunction)
+                        20 => vec![],
+                        // Write File Record - Not implemented (IllegalFunction)
+                        21 => vec![],
+                        // Mask Write Register - Not implemented (IllegalFunction)
+                        22 => vec![],
+                        // Read/Write Multiple Registers - Not implemented (IllegalFunction)
+                        23 => vec![],
+                        // Read FIFO Queue - Not implemented (IllegalFunction)
+                        24 => vec![],
+                        // Read Device Identification - Not implemented (IllegalFunction)
+                        43 => vec![],
                         // Custom FCs
                         65 | 66 | 67 | 68 | 69 | 70 | 71 | 72 | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 | 108 | 109 | 110 => vec![fc, 0xC0, 0xDE],
                     };
