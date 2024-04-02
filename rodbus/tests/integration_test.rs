@@ -305,6 +305,21 @@ async fn test_requests_and_responses() {
     }
     // ANCHOR_END: custom_function_code
 
+    // ANCHOR: mutable_function_code
+    // Test the unimplemented fc handlers from 65 to 255
+    for i in 65..128 {
+        assert_eq!(
+            channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(i, vec![0xC0, 0xDE])).await,
+            Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(i+128, 0, 128).into()))
+        );
+    }
+    for i in 128..=255 {
+        assert_eq!(
+            channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(i, vec![0xC0, 0xDE])).await,
+            Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(i, 0, 128).into()))
+        );
+    }
+    // ANCHOR_END: mutable_function_code
 }
 
 #[test]
