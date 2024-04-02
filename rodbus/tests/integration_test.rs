@@ -306,8 +306,32 @@ async fn test_requests_and_responses() {
     // ANCHOR_END: custom_function_code
 
     // ANCHOR: mutable_function_code
-    // Test the unimplemented fc handlers from 65 to 255
-    for i in 65..128 {
+    // Test a nested mutable FC (not implemented)
+    assert_eq!(
+        channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(0, vec![0xC0, 0xDE])).await,
+        Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(128, 0, 128).into()))
+    );
+
+    // Test the implemented FCs 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 16, 17, 20, 21, 22, 23, 24
+    let fcs: [u8; 18] = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 16, 17, 20, 21, 22, 23, 24];
+    for &fc in fcs.iter() {
+        assert_eq!(
+            channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(fc, vec![0xC0, 0xDE])).await,
+            Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(fc+128, 0, 128).into()))
+        );
+    }
+
+    // Test the unimplemented FCs 9, 10, 13, 14, 18, 19
+    let fcs: [u8; 6] = [9, 10, 13, 14, 18, 19];
+    for &fc in fcs.iter() {
+        assert_eq!(
+            channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(fc, vec![0xC0, 0xDE])).await,
+            Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(fc+128, 0, 128).into()))
+        );
+    }
+
+    // Test the unimplemented FCs from 25 to 255
+    for i in 25..128 {
         assert_eq!(
             channel.send_mutable_function_code(params, rodbus::MutableFunctionCode::new(i, vec![0xC0, 0xDE])).await,
             Err(RequestError::BadResponse(AduParseError::UnknownResponseFunction(i+128, 0, 128).into()))
